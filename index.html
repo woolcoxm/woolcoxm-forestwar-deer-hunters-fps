@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORESTWAR — Deer vs Hunters</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0f0a; font-family: 'Trebuchet MS', sans-serif; color: #e8f3e8; user-select: none; }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  #hud { position: fixed; inset: 0; pointer-events: none; z-index: 10; }
+  #crosshair { position: absolute; top: 50%; left: 50%; width: 22px; height: 22px; transform: translate(-50%, -50%); }
+  #crosshair::before, #crosshair::after { content: ''; position: absolute; background: rgba(220,255,220,0.85); box-shadow: 0 0 4px rgba(0,0,0,0.9); }
+  #crosshair::before { left: 50%; top: 0; width: 2px; height: 100%; transform: translateX(-50%); }
+  #crosshair::after { top: 50%; left: 0; height: 2px; width: 100%; transform: translateY(-50%); }
+  #vignette { position: absolute; inset: 0; box-shadow: inset 0 0 220px 60px rgba(0,0,0,0.65); }
+  #stats { position: absolute; top: 14px; left: 16px; font-size: 13px; letter-spacing: 1px; text-shadow: 0 2px 4px #000; line-height: 1.6; }
+  #stats b { color: #9fe8a0; }
+  #teambar { position: absolute; top: 14px; right: 16px; text-align: right; font-size: 13px; text-shadow: 0 2px 4px #000; line-height: 1.6; }
+  .deer-c { color: #f0c98a; }
+  .hunter-c { color: #c9d8ff; }
+  #overlay { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; flex-direction: column; background: radial-gradient(circle at center, rgba(20,40,20,0.85), rgba(0,0,0,0.96)); cursor: pointer; transition: opacity 0.4s; }
+  #overlay.hidden { opacity: 0; pointer-events: none; }
+  #overlay h1 { font-size: 64px; letter-spacing: 8px; background: linear-gradient(90deg, #f0c98a, #c9d8ff); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 30px rgba(120,200,120,0.3); }
+  #overlay h2 { font-size: 18px; letter-spacing: 4px; color: #8fbf8f; margin-top: -4px; margin-bottom: 22px; }
+  #overlay p { font-size: 14px; color: #b9d6b9; max-width: 560px; text-align: center; line-height: 1.7; margin-bottom: 6px; }
+  #overlay .key { display: inline-block; padding: 2px 8px; border: 1px solid #5a8a5a; border-radius: 4px; background: rgba(40,70,40,0.6); font-size: 12px; color: #dfe; margin: 0 2px; }
+  .team-select { display: flex; gap: 18px; margin: 22px 0 8px; }
+  .team-select button { pointer-events: auto; font-family: inherit; font-size: 16px; letter-spacing: 3px; padding: 14px 26px; border-radius: 6px; cursor: pointer; border: 2px solid; background: rgba(0,0,0,0.4); transition: transform 0.12s, box-shadow 0.12s, background 0.12s; }
+  .team-select button:hover { transform: translateY(-2px); }
+  .team-select .hunter-btn { color: #c9d8ff; border-color: #6f86c9; box-shadow: 0 0 18px rgba(100,130,200,0.35); }
+  .team-select .hunter-btn:hover { background: rgba(60,80,140,0.5); }
+  .team-select .deer-btn { color: #f0c98a; border-color: #c9a060; box-shadow: 0 0 18px rgba(200,160,90,0.35); }
+  .team-select .deer-btn:hover { background: rgba(120,90,40,0.5); }
+  #overlay .hint { margin-top: 10px; font-size: 13px; color: #6f8f6f; }
+  .loaderr { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); font-size: 12px; color: #ff6644; z-index: 30; max-width: 80vw; text-align: center; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="hud">
+  <div id="vignette"></div>
+  <div id="crosshair"></div>
+  <div id="stats"></div>
+  <div id="teambar"></div>
+</div>
+<div id="overlay">
+  <h1>FORESTWAR</h1>
+  <h2>DEER &nbsp;vs&nbsp; HUNTERS</h2>
+  <p>The old forest is a battlefield. Antler against rifle. Herd against trap. Pick a side and hold the line.</p>
+  <p>Move <span class="key">W A S D</span> &nbsp; Look <span class="key">MOUSE</span> &nbsp; Jump <span class="key">SPACE</span> &nbsp; Sprint <span class="key">SHIFT</span> &nbsp; Crouch <span class="key">CTRL</span></p>
+  <p>Weapons <span class="key">1 2 3</span> &nbsp; Reload <span class="key">R</span> &nbsp; Bayonet <span class="key">V</span> &nbsp; Reinforce <span class="key">5</span> &nbsp; Bear Trap <span class="key">6</span> &nbsp; Owl Strike <span class="key">Q</span> &nbsp; Orders <span class="key">1-4 hold</span></p>
+  <p>Attack Drone <span class="key">P</span> &nbsp; Drone Sentry Hold <span class="key">SHIFT+P</span> <span style="color:#6f8f6f;">(hunters)</span></p>
+  <p>Smoke Screen <span class="key">H</span> &nbsp; Med-Tent <span class="key">N</span> &nbsp; <span style="color:#9fe8a0;">Supply planes</span> airdrop loot crates &mdash; secure them for ammo, armor &amp; team buffs.</p>
+  <p style="font-size:12px;color:#66ccff;">Down a foe and they may spill a <b>munitions pouch</b> &mdash; sweep the battlefield to keep your magazines fed (running dry? keep killing).</p>
+  <p style="font-size:12px;color:#ffaa44;">Chain kills to unlock <b>killstreak rewards</b>: <span class="key">Q</span> Owl Strike (7) &middot; <span class="key">J</span> Gunship (10) &middot; <span class="key">U</span> AC-130 Gunship (15).</p>
+  <p style="font-size:12px;color:#ff6644;">On the brink of death, an <b>adrenaline surge</b> kicks in &mdash; faster, tougher, firing harder for one last stand.</p>
+  <p style="font-size:12px;color:#9fe8a0;margin-top:8px;">Aim for the head — clean headshots deal <b>critical damage</b>.</p>
+  <p style="font-size:12px;color:#7fa07f;">Every footstep kicks up dust &mdash; sprint, crouch and hard landings all sound different now.</p>
+  <p style="font-size:12px;color:#c89868;">Beyond the front line, <b>peaceful deer herds</b> roam &mdash; gunfire and blasts send them stampeding through the trees.</p>
+  <p style="font-size:12px;color:#e05a44;">At night, watch the sky: a <b>Blood Moon</b> sends the deer herd into a frenzied rage.</p>
+  <p style="font-size:12px;color:#cc88ff;">When a team falls behind, a <b>comeback portal</b> tears open near their objective, flooding reinforcements through a destroyable rift &mdash; blast it shut or it won't stop.</p>
+  <p style="font-size:12px;color:#aa88cc;">Fall in battle and a <b>killcam</b> orbits your killer in slow motion before redeploy.</p>
+  <p style="font-size:12px;color:#ffcc55;">Unleash a <b>WARCRY</b> <span class="key">Y</span> &mdash; a thunderous roar that bowls over nearby foes and rallies your allies to charge harder.</p>
+  <p style="font-size:12px;color:#ffaa66;">Drop a <b>CHAINGUN</b> nest <span class="key">Z</span> &mdash; a belt-fed minigun emplacement. Walk up and <span class="key">E</span> mount it, spin up the barrels and lay down a wall of lead (mind the heat gauge!).</p>
+  <p style="font-size:12px;color:#bcd0bc;">Hold <span class="key">TAB</span> for the <b>tactical scoreboard</b> &mdash; team clash, kills, deaths &amp; streak at a glance.</p>
+  <p style="font-size:12px;color:#ffcc66;">Taunt the forest: <span class="key">7</span> Victory <span class="key">9</span> Heart <span class="key" style="margin-left:6px;">8</span> Laugh <span class="key">0</span> Rage &mdash; mock foes into a charge or rally your allies to push.</p>
+  <p style="font-size:12px;color:#8ab8cc;">An <b>adaptive score</b> swells with the battle around you &mdash; press <span class="key">M</span> to mute the music.</p>
+  <div class="team-select">
+    <button class="hunter-btn" data-team="hunter">PLAY AS HUNTER</button>
+    <button class="deer-btn" data-team="deer">PLAY AS DEER</button>
+  </div>
+  <p class="hint">deploy into the forest</p>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<!-- ============ ENGINE SHELL ============ -->
+<script type="module">
+import * as THREE from 'three';
+window.THREE = THREE;
+
+const APP = document.getElementById('app');
+const RENDERER = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+RENDERER.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+RENDERER.setSize(window.innerWidth, window.innerHeight);
+RENDERER.shadowMap.enabled = true;
+RENDERER.shadowMap.type = THREE.PCFSoftShadowMap;
+RENDERER.outputColorSpace = THREE.SRGBColorSpace;
+APP.appendChild(RENDERER.domElement);
+
+const SCENE = new THREE.Scene();
+SCENE.background = new THREE.Color(0x9fb9c9);
+const FOG = new THREE.FogExp2(0xa9c4cf, 0.014);
+SCENE.fog = FOG;
+
+const CAMERA = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+CAMERA.position.set(0, 1.7, 0);
+CAMERA.rotation.order = 'YXZ';
+
+const SUN = new THREE.DirectionalLight(0xfff2d8, 2.2);
+SUN.position.set(80, 140, 60);
+SUN.castShadow = true;
+SUN.shadow.mapSize.set(2048, 2048);
+SUN.shadow.camera.near = 1;
+SUN.shadow.camera.far = 400;
+SUN.shadow.camera.left = -120;
+SUN.shadow.camera.right = 120;
+SUN.shadow.camera.top = 120;
+SUN.shadow.camera.bottom = -120;
+SUN.shadow.bias = -0.0004;
+SCENE.add(SUN);
+const SUN_TARGET = new THREE.Object3D();
+SCENE.add(SUN_TARGET);
+SUN.target = SUN_TARGET;
+
+const SKY_LIGHT = new THREE.HemisphereLight(0xbcd6e8, 0x4a5a3a, 1.0);
+SCENE.add(SKY_LIGHT);
+
+// ---------- TERRAIN ----------
+const WORLD_SIZE = 300;
+const SEG = 160;
+function heightAt(x, z) {
+  const big = Math.sin(x * 0.03) * Math.cos(z * 0.025) * 5.0;
+  const mid = Math.sin(x * 0.08 + 1.3) * Math.cos(z * 0.06) * 2.2;
+  const fine = Math.sin(x * 0.21) * Math.sin(z * 0.19) * 0.8;
+  const ridge = Math.max(0, Math.sin(x * 0.012 - z * 0.01)) * 9.0;
+  return big + mid + fine + ridge - 1.5;
+}
+window.groundHeight = heightAt;
+
+const terrainGeo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, SEG, SEG);
+terrainGeo.rotateX(-Math.PI / 2);
+const posAttr = terrainGeo.attributes.position;
+const colors = [];
+const colA = new THREE.Color(0x2f5a2a);
+const colB = new THREE.Color(0x6f7a3a);
+const colC = new THREE.Color(0x7a6a44);
+for (let i = 0; i < posAttr.count; i++) {
+  const x = posAttr.getX(i);
+  const z = posAttr.getZ(i);
+  const y = heightAt(x, z);
+  posAttr.setY(i, y);
+  const t = Math.max(0, Math.min(1, (y + 4) / 14));
+  const c = colA.clone().lerp(colB, t).lerp(colC, Math.max(0, t - 0.7) * 2);
+  const n = (Math.sin(x * 1.7) * Math.cos(z * 1.3) + 1) * 0.5;
+  c.offsetHSL(0, 0, (n - 0.5) * 0.05);
+  colors.push(c.r, c.g, c.b);
+}
+terrainGeo.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+terrainGeo.computeVertexNormals();
+const terrainMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.95, metalness: 0.0 });
+const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+terrain.receiveShadow = true;
+SCENE.add(terrain);
+
+// ---------- FOREST (with collision data) ----------
+const TREES = [];
+window.TREES = TREES;
+const FOREST = new THREE.Group();
+SCENE.add(FOREST);
+
+const trunkGeo = new THREE.CylinderGeometry(0.28, 0.45, 1, 6);
+const foliageGeo = new THREE.ConeGeometry(1, 1, 7);
+
+function makePine() {
+  const g = new THREE.Group();
+  const trunkH = 3.5 + Math.random() * 2.5;
+  const trunk = new THREE.Mesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x5a3f28, roughness: 1 }));
+  trunk.scale.set(1, trunkH, 1);
+  trunk.position.y = trunkH / 2;
+  trunk.castShadow = true;
+  g.add(trunk);
+  const layers = 3 + (Math.random() * 2 | 0);
+  for (let i = 0; i < layers; i++) {
+    const folMat = new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.32, 0.5, 0.16 + Math.random() * 0.06), roughness: 0.95, flatShading: true });
+    const coneH = 2.6 + Math.random() * 1.4;
+    const cone = new THREE.Mesh(foliageGeo, folMat);
+    cone.scale.set(1 + i * 0.18, coneH, 1 + i * 0.18);
+    cone.position.y = trunkH + i * 1.5;
+    cone.castShadow = true;
+    g.add(cone);
+  }
+  return g;
+}
+
+const TREE_COUNT = 150;
+for (let i = 0; i < TREE_COUNT; i++) {
+  const a = Math.random() * Math.PI * 2;
+  const r = 7 + Math.random() * 135;
+  const x = Math.cos(a) * r, z = Math.sin(a) * r;
+  const pine = makePine();
+  const ty = heightAt(x, z);
+  pine.position.set(x, ty, z);
+  pine.rotation.y = Math.random() * Math.PI;
+  const s = 0.85 + Math.random() * 0.5;
+  pine.scale.setScalar(s);
+  FOREST.add(pine);
+  TREES.push({ x, z, y: ty, r: 0.6 * s, mesh: pine });
+}
+
+// ---------- GLOBALS for modules ----------
+window.SCENE = SCENE;
+window.CAMERA = CAMERA;
+window.RENDERER = RENDERER;
+window.SUN = SUN;
+window.FOG = FOG;
+window.SKY_LIGHT = SKY_LIGHT;
+window.SUN_TARGET = SUN_TARGET;
+window.WORLD_SIZE = WORLD_SIZE;
+
+window.addEventListener('resize', () => {
+  CAMERA.aspect = window.innerWidth / window.innerHeight;
+  CAMERA.updateProjectionMatrix();
+  RENDERER.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+<!-- ============ MODULES (load order matters) ============ -->
+<script type="module" src="world.js"></script>
+<script type="module" src="sound.js"></script>
+<script type="module" src="music.js"></script>
+<script type="module" src="fx.js"></script>
+<script type="module" src="entities.js"></script>
+<script type="module" src="herd.js"></script>
+<script type="module" src="kill-rewards.js"></script>
+<script type="module" src="blood-pools.js"></script>
+<script type="module" src="craters.js"></script>
+<script type="module" src="fire-propagation.js"></script>
+<script type="module" src="suppression.js"></script>
+<script type="module" src="player.js"></script>
+<script type="module" src="footsteps.js"></script>
+<script type="module" src="weapons.js"></script>
+<script type="module" src="pickups.js"></script>
+<script type="module" src="ammo-drops.js"></script>
+<script type="module" src="objectives.js"></script>
+<script type="module" src="squads.js"></script>
+<script type="module" src="radar.js"></script>
+<script type="module" src="vehicle.js"></script>
+<script type="module" src="reinforcements.js"></script>
+<script type="module" src="boss.js"></script>
+<script type="module" src="sky.js"></script>
+<script type="module" src="weather.js"></script>
+<script type="module" src="blood-moon.js"></script>
+<script type="module" src="turret.js"></script>
+<script type="module" src="artillery.js"></script>
+<script type="module" src="traps.js"></script>
+<script type="module" src="beacon.js"></script>
+<script type="module" src="drone.js"></script>
+<script type="module" src="combat-drone.js"></script>
+<script type="module" src="melee.js"></script>
+<script type="module" src="supply-radar.js"></script>
+<script type="module" src="threat-vision.js"></script>
+<script type="module" src="smoke-grenade.js"></script>
+<script type="module" src="command-map.js"></script>
+<script type="module" src="apc.js"></script>
+<script type="module" src="manager.js"></script>
+<script type="module" src="spatial-grid.js"></script>
+<script type="module" src="owl-strike.js"></script>
+<script type="module" src="heli-strike.js"></script>
+<script type="module" src="ac130.js"></script>
+<script type="module" src="killstreak.js"></script>
+<script type="module" src="scoreboard.js"></script>
+<script type="module" src="combat-text.js"></script>
+<script type="module" src="ranks.js"></script>
+<script type="module" src="regen.js"></script>
+<script type="module" src="adrenaline.js"></script>
+<script type="module" src="med-tent.js"></script>
+<script type="module" src="supply-drop.js"></script>
+<script type="module" src="portals.js"></script>
+<script type="module" src="warcry.js"></script>
+<script type="module" src="chaingun.js"></script>
+<script type="module" src="killcam.js"></script>
+<script type="module" src="emotes.js"></script>
+<script type="module" src="main.js"></script>
+</body>
+</html>
