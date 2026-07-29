@@ -95,9 +95,10 @@ const Player = (() => {
     if (KEYS['KeyD']) wish.add(right);
     if (KEYS['KeyA']) wish.sub(right);
 
+    const aimAmt = (window.Weapons && Weapons.getAimAmount) ? Weapons.getAimAmount() : 0;
     let speed = SPEED_WALK;
     const wantsSprint = KEYS['ShiftLeft'] && wish.lengthSq() > 0 && !state.crouching;
-    const canSprint = wantsSprint && !state.exhausted && state.stamina > 0.5;
+    const canSprint = wantsSprint && !state.exhausted && state.stamina > 0.5 && aimAmt < 0.3;
     state.sprinting = canSprint;
 
     if (state.crouching) {
@@ -115,6 +116,9 @@ const Player = (() => {
       state.tilt += (0 - state.tilt) * Math.min(1, 8 * dt);
       state.tiltVel *= 1 - Math.min(1, 6 * dt);
     }
+
+    // Shouldering the weapon for a sight picture slows your stride.
+    if (aimAmt > 0.001) speed *= (1 - 0.45 * aimAmt);
 
     // Adrenaline overcharge grants a burst of speed at low HP.
     if (window.Adrenaline && Adrenaline.isActive()) speed *= Adrenaline.getSpeedMult();

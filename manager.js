@@ -120,6 +120,7 @@ const Manager = (() => {
     if (window.Portals && window.Portals.reset) window.Portals.reset();
     if (window.Warcry && window.Warcry.reset) window.Warcry.reset();
     if (window.Stampede && window.Stampede.reset) window.Stampede.reset();
+    if (window.Weapons && window.Weapons.reset) window.Weapons.reset();
     if (window.Chaingun && window.Chaingun.reset) window.Chaingun.reset();
     if (window.BloodMoon && window.BloodMoon.reset) window.BloodMoon.reset();
     if (window.Ranks && window.Ranks.reset) window.Ranks.reset();

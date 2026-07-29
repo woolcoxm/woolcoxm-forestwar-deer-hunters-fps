@@ -42,10 +42,11 @@ and deploy.
 |---|---|---|---|
 | Move | `W A S D` | Reload | `R` |
 | Look / Aim | `Mouse` | Switch weapon | `1` `2` `3` |
-| Shoot | `Left Click` | Bayonet melee | `V` |
-| Jump | `Space` | Reinforce (call allies) | `5` / `F` |
-| Sprint | `Shift` | Bear trap | `6` |
-| Crouch | `Ctrl` / `C` | Squad orders | hold `1`–`4` |
+| Shoot | `Left Click` | **Aim down sights** (zoom + tight cone) | `Right Click` hold |
+| Jump | `Space` | Bayonet melee | `V` |
+| Sprint | `Shift` | Reinforce (call allies) | `5` / `F` |
+| Crouch | `Ctrl` / `C` | Bear trap | `6` |
+| Squad orders | hold `1`–`4` | Mute music | `M` |
 
 **Abilities & killstreaks**
 
@@ -71,6 +72,10 @@ Survive as long as you can. Every **5 waves** a **Mega‑Stag boss** arrives.
   (rifles, rockets, deployables), each with friendly AI squads.
 - **FPS controller** with sprint stamina, crouch, headshot crits, reload, and
   multiple weapons.
+- **Aim down sights (ADS)** — hold right-click to shoulder any weapon: a smooth
+  FOV zoom, a dramatically tighter bullet cone, braced recoil and a steadier
+  sight picture (the viewmodel lifts to centre), at the cost of movement speed.
+  Sprint, mount a chaingun, or take a killcam hit to drop the sight automatically.
 - **Wave & objective system** — capture-point flags grant team buffs; waves scale
   in size, and bosses trigger on a cycle.
 - **Killstreak economy** — chain kills for a rising score multiplier and to unlock

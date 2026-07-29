@@ -56,6 +56,8 @@ const Weapons = (() => {
     recoilHOffset: 0,
     swayPhase: 0,
     swayTime: 0,
+    aiming: false,   // right-click held → shouldering the weapon for a sight picture
+    aimT: 0,         // smoothed 0..1 blend driving zoom / pose / spread
   };
   state.active = state.slots[0];
 
@@ -143,17 +145,32 @@ const Weapons = (() => {
 
   const viewModel = buildViewModel();
   const viewBase = new THREE.Vector3(0.22, -0.22, -0.55);
+  // ADS (aim down sights): hold right-click to shoulder the weapon toward the
+  // centre line. Per-weapon zoom targets: rifle / rockets / grenades.
+  const BASE_FOV = 75;
+  const ADS_FOV = [50, 60, 62];
+  const ADS_SPREAD_MULT = 0.25;   // cone tightens to a quarter when sighted
+  const ADS_RECOIL_MULT = 0.7;    // braced stock kicks less
+  const adsBase = new THREE.Vector3(-0.2, -0.155, -0.62); // lifted, centred pose
+  let adsVig = null;
+  let crosshairEl = null;
 
-  function updateViewModel(dt, moving) {
+  function updateViewModel(dt, moving, aimT) {
     if (!viewModel) return;
+    if (aimT === undefined) aimT = 0;
     const sway = state.active ? state.active.recoilOffset : 0;
     state.swayTime += dt;
-    const breath = Math.sin(state.swayTime * 1.5) * 0.004;
-    const bob = moving ? Math.sin(state.swayTime * 8) * 0.008 : 0;
-    viewModel.position.x = viewBase.x + Math.sin(state.swayTime * 1.3) * 0.003 + state.recoilHOffset * 0.15;
-    viewModel.position.y = viewBase.y + breath + bob - sway * 0.5;
-    viewModel.position.z = viewBase.z + sway * 0.8;
-    viewModel.rotation.x = sway * 2.5 + (moving ? Math.cos(state.swayTime * 8) * 0.015 : 0);
+    const steady = 1 - aimT * 0.8;          // ADS damps idle sway/bob for a steady sight
+    const breath = Math.sin(state.swayTime * 1.5) * 0.004 * steady;
+    const bob = moving ? Math.sin(state.swayTime * 8) * 0.008 * (1 - aimT * 0.7) : 0;
+    // Shoulder the rifle toward the centre line as the sight picture comes up.
+    const bx = viewBase.x + (adsBase.x - viewBase.x) * aimT;
+    const by = viewBase.y + (adsBase.y - viewBase.y) * aimT;
+    const bz = viewBase.z + (adsBase.z - viewBase.z) * aimT;
+    viewModel.position.x = bx + Math.sin(state.swayTime * 1.3) * 0.003 * steady + state.recoilHOffset * 0.15 * steady;
+    viewModel.position.y = by + breath + bob - sway * 0.5;
+    viewModel.position.z = bz + sway * 0.8;
+    viewModel.rotation.x = sway * 2.5 + (moving ? Math.cos(state.swayTime * 8) * 0.015 * (1 - aimT * 0.7) : 0);
   }
 
   function updateRecoil(dt) {
@@ -172,8 +189,10 @@ const Weapons = (() => {
   }
 
   function applyRecoil(weapon) {
-    state.recoilOffset += weapon.recoilV;
-    state.recoilHOffset += (Math.random() - 0.5) * weapon.recoilH * 2;
+    // A shouldered, aimed shot kicks less — the stock is braced into the shoulder.
+    const adsMul = state.aimT > 0.4 ? ADS_RECOIL_MULT : 1;
+    state.recoilOffset += weapon.recoilV * adsMul;
+    state.recoilHOffset += (Math.random() - 0.5) * weapon.recoilH * 2 * adsMul;
     if (state.recoilOffset > 0.08) state.recoilOffset = 0.08;
   }
 
@@ -247,10 +266,13 @@ const Weapons = (() => {
 
   function fireRifle(w) {
     CAMERA.getWorldDirection(_camDir);
+    // Aiming down the sights tightens the cone dramatically for precision work.
+    const adsMul = state.aimT > 0.4 ? ADS_SPREAD_MULT : 1;
+    const sp = w.spread * adsMul;
     _spread.set(
-      (Math.random() - 0.5) * w.spread,
-      (Math.random() - 0.5) * w.spread,
-      (Math.random() - 0.5) * w.spread
+      (Math.random() - 0.5) * sp,
+      (Math.random() - 0.5) * sp,
+      (Math.random() - 0.5) * sp
     );
     _ray.set(CAMERA.position, _camDir.clone().add(_spread).normalize());
     _ray.far = w.range;
@@ -489,6 +511,19 @@ const Weapons = (() => {
   });
   window.addEventListener('mouseup', (e) => {
     if (e.button === 0) firing = false;
+    else if (e.button === 2) state.aiming = false;
+  });
+  // Aim down sights: hold right mouse to shoulder the weapon (zoom + tight spread).
+  window.addEventListener('mousedown', (e) => {
+    if (e.button !== 2) return;
+    if (!window.Player || !Player.state.locked) return;
+    if (window.Manager && Manager.state.phase !== 'playing') return;
+    if (window.Chaingun && Chaingun.isMounted && Chaingun.isMounted()) return;
+    state.aiming = true;
+  });
+  // Suppress the browser context menu while playing so the ADS hold isn't interrupted.
+  window.addEventListener('contextmenu', (e) => {
+    if (window.Player && Player.state.locked) e.preventDefault();
   });
 
   function updateRockets(dt) {
@@ -605,6 +640,34 @@ const Weapons = (() => {
     SCENE.remove(m);
   }
 
+  function updateADS(dt) {
+    const p = window.Player && window.Player.state;
+    const ms = window.Manager && window.Manager.state;
+    const playing = !!(ms && ms.phase === 'playing');
+    const mounted = !!(window.Chaingun && Chaingun.isMounted && Chaingun.isMounted());
+    const kcActive = !!(window.Killcam && Killcam.isActive && Killcam.isActive());
+    // Anything that breaks the sight picture drops the aim this frame.
+    let wantAim = state.aiming;
+    if (!playing || !p || !p.locked || mounted || (ms && !ms.playerAlive) || (p && p.sprinting)) wantAim = false;
+    state.aiming = wantAim;
+    const target = wantAim ? 1 : 0;
+    const rate = wantAim ? 9.0 : 11.0;   // aim-in a touch slower than releasing
+    state.aimT += (target - state.aimT) * Math.min(1, rate * dt);
+    if (state.aimT < 0.001) state.aimT = 0;
+    else if (state.aimT > 0.999) state.aimT = 1;
+    // Only the live player camera zooms — never fight the killcam's direction.
+    if (!kcActive && CAMERA) {
+      const adsFov = ADS_FOV[state.slot] != null ? ADS_FOV[state.slot] : BASE_FOV;
+      const wantFov = BASE_FOV + (adsFov - BASE_FOV) * state.aimT;
+      if (Math.abs(CAMERA.fov - wantFov) > 0.05) {
+        CAMERA.fov = wantFov;
+        CAMERA.updateProjectionMatrix();
+      }
+    }
+    if (adsVig) adsVig.style.opacity = (state.aimT * 0.6).toFixed(3);
+    if (crosshairEl) crosshairEl.style.transform = 'translate(-50%, -50%) scale(' + (1 - 0.5 * state.aimT).toFixed(3) + ')';
+  }
+
   function update(dt) {
     for (const s of state.slots) {
       if (s.cd > 0) s.cd = Math.max(0, s.cd - dt);
@@ -623,10 +686,11 @@ const Weapons = (() => {
     if (firing && state.active && state.active.auto && state.active.ammo > 0 && !state.active.reloading && state.active.cd <= 0 && !(window.Chaingun && window.Chaingun.isMounted && window.Chaingun.isMounted())) {
       tryFire();
     }
+    updateADS(dt);
     updateRecoil(dt);
     const player = window.Player;
     const moving = player && player.state && (player.state.vel.x !== 0 || player.state.vel.z !== 0);
-    updateViewModel(dt, moving);
+    updateViewModel(dt, moving, state.aimT);
     updateRockets(dt);
     updateGrenades(dt);
     updateTrails(dt);
@@ -634,8 +698,28 @@ const Weapons = (() => {
 
   function init() {
     updateHUD();
+    crosshairEl = document.getElementById('crosshair');
+    if (!adsVig) {
+      adsVig = document.createElement('div');
+      // Subtle tunnel-vision vignette that swells with the zoom for sight feedback.
+      adsVig.style.cssText = 'position:absolute;inset:0;pointer-events:none;z-index:5;opacity:0;'
+        + 'box-shadow:inset 0 0 150px 34px rgba(0,0,0,0.6);';
+      const hud = document.getElementById('hud');
+      if (hud) hud.appendChild(adsVig);
+    }
   }
 
-  return { init, update, tryFire, reload, switchSlot, updateHUD, get state() { return state; } };
+  function isAiming() { return state.aimT > 0.4; }
+  function getAimAmount() { return state.aimT; }
+
+  function reset() {
+    state.aiming = false;
+    state.aimT = 0;
+    if (adsVig) adsVig.style.opacity = '0';
+    if (crosshairEl) crosshairEl.style.transform = 'translate(-50%, -50%) scale(1)';
+    if (CAMERA) { CAMERA.fov = BASE_FOV; CAMERA.updateProjectionMatrix(); }
+  }
+
+  return { init, update, reset, tryFire, reload, switchSlot, updateHUD, isAiming, getAimAmount, get state() { return state; } };
 })();
 window.Weapons = Weapons;
