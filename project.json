@@ -21,8 +21,10 @@
     "blood-trails.js",
     "boss.js",
     "caster-deer.js",
+    "central-beacon.js",
     "chain-lightning.js",
     "chaingun.js",
+    "chaos-surge.js",
     "charge-ability.js",
     "classes.js",
     "combat-drone.js",
@@ -96,6 +98,7 @@
     "stampede.js",
     "stealth-camo.js",
     "streak-store.js",
+    "supply-beacons.js",
     "supply-drop.js",
     "supply-radar.js",
     "supply-request.js",
@@ -115,12 +118,11 @@
     "weapons.js",
     "weather.js",
     "world.js",
-    "supply-beacons.js",
-    "chaos-surge.js",
-    "central-beacon.js"
+    "jammer-deer.js",
+    "battle-phases.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 162,
-  "updatedAt": 1785357146675,
+  "steps": 166,
+  "updatedAt": 1785357481691,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }
