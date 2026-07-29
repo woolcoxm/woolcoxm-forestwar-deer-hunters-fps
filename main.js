@@ -80,7 +80,7 @@
   function initModules() {
     // Modules that expose init() (register keys / build HUD / seed the world).
     const mods = ['Objectives', 'Squads', 'Weapons', 'Pickups', 'Vehicle',
-                  'Reinforcements', 'Turret', 'Beacon', 'Artillery', 'Smoke', 'OwlStrike', 'Killstreak', 'Scoreboard', 'Fire', 'Ranks', 'Emotes', 'Herd', 'Portals'];
+                  'Reinforcements', 'Turret', 'Beacon', 'Artillery', 'Smoke', 'OwlStrike', 'Killstreak', 'Scoreboard', 'Fire', 'Ranks', 'Emotes', 'Herd', 'Portals', 'ArmorVest'];
     for (const name of mods) {
       const m = window[name];
       if (m && typeof m.init === 'function') {
@@ -98,7 +98,7 @@
       const steps = [
         'Player', 'Chaingun', 'Killcam', 'Footsteps', 'Weapons', 'Entities', 'Herd', 'BloodPools', 'Craters', 'Suppression', 'Pickups', 'AmmoDrops', 'Objectives', 'Squads',
         'Vehicle', 'Boss', 'Reinforcements', 'Radar', 'Weather', 'Turret',
-        'Artillery', 'Traps', 'Beacon', 'Drone', 'CombatDrone', 'Melee', 'ThreatVision', 'SupplyRadar', 'APC', 'Smoke', 'OwlStrike', 'HeliStrike', 'AC130', 'Killstreak', 'Scoreboard', 'CombatText', 'Regen', 'Adrenaline', 'MedTent', 'SupplyDrop', 'Portals', 'Fire', 'Emotes', 'Warcry'
+        'Artillery', 'Traps', 'Beacon', 'Drone', 'CombatDrone', 'Melee', 'ThreatVision', 'SupplyRadar', 'APC', 'Smoke', 'OwlStrike', 'HeliStrike', 'AC130', 'Killstreak', 'Scoreboard', 'CombatText', 'Regen', 'Adrenaline', 'MedTent', 'ArmorVest', 'SupplyDrop', 'Portals', 'Fire', 'Emotes', 'Warcry'
       ];
       for (const name of steps) {
         const m = window[name];

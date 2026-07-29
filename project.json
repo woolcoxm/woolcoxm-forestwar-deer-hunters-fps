@@ -97,9 +97,11 @@
     "weather.js",
     "world.js",
     "armor-vest.js",
-    "water-holes.js"
+    "water-holes.js",
+    "pack-tactics.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 139,
-  "updatedAt": 1785350707920
+  "steps": 141,
+  "updatedAt": 1785351791189,
+  "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }
