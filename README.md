@@ -116,6 +116,9 @@ See **Quick start** above to launch it, then follow the on-screen controls. The 
 - `world.js`
 - `airstrike.js`
 - `supply-request.js`
+- `thermal-flare.js`
+- `mobile.js`
+- `viewmodel.js`
 
 ## 📄 License
 

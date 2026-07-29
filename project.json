@@ -100,10 +100,13 @@
     "weather.js",
     "world.js",
     "airstrike.js",
-    "supply-request.js"
+    "supply-request.js",
+    "thermal-flare.js",
+    "mobile.js",
+    "viewmodel.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 144,
-  "updatedAt": 1785352183740,
+  "steps": 148,
+  "updatedAt": 1785352571502,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }

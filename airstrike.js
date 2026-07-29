@@ -19,6 +19,7 @@ const Airstrike = (() => {
   const SMOKE_POOL = 24;
   const SMOKE_LIFE = 1.6;
   const CRATER_COUNT = BOMB_COUNT + 2;
+  const KILLS_COST = 7;
 
   const state = {
     cd: 0,
@@ -67,100 +68,66 @@ const Airstrike = (() => {
     const fuse = new THREE.Mesh(FUSE_GEO, FUSE_MAT);
     fuse.castShadow = true;
     g.add(fuse);
-    const wings = new THREE.Mesh(WING_GEO, WING_MAT);
-    wings.position.set(0, 0, 0);
-    wings.castShadow = true;
-    g.add(wings);
+    const wing = new THREE.Mesh(WING_GEO, WING_MAT);
+    wing.castShadow = true;
+    g.add(wing);
     const tailFin = new THREE.Mesh(TAIL_FIN_GEO, WING_MAT);
     tailFin.position.set(-2.0, 0.6, 0);
     g.add(tailFin);
     const tailPlane = new THREE.Mesh(TAIL_PLANE_GEO, WING_MAT);
-    tailPlane.position.set(-2.0, 0.15, 0);
+    tailPlane.position.set(-2.0, 0, 0);
     g.add(tailPlane);
     const canopy = new THREE.Mesh(CANOPY_GEO, CANOPY_MAT);
-    canopy.position.set(0.7, 0.3, 0);
+    canopy.position.set(0.6, 0.3, 0);
     g.add(canopy);
     for (const sx of [-1, 1]) {
       const eng = new THREE.Mesh(ENGINE_GEO, ENGINE_MAT);
-      eng.position.set(-1.6, -0.15, sx * 1.8);
+      eng.position.set(-1.8, 0, sx * 0.7);
       g.add(eng);
-      const exh = new THREE.Mesh(EXHAUST_GEO, EXHAUST_MAT.clone());
-      exh.position.set(-2.2, -0.15, sx * 1.8);
-      exh.rotation.y = Math.PI;
-      g.add(exh);
+      const ex = new THREE.Mesh(EXHAUST_GEO, EXHAUST_MAT);
+      ex.position.set(-2.5, 0, sx * 0.7);
+      g.add(ex);
     }
     g.visible = false;
-    g.frustumCulled = false;
     SCENE.add(g);
     return g;
   }
 
-  // ---- Beacon (ground marker) --------------------------------------------
-  const BEACON_GEO = new THREE.RingGeometry(1.5, BOMB_RADIUS, 32);
-  const BEACON_MAT = new THREE.MeshBasicMaterial({ color: 0xff2222, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-  const BEACON_CROSS_GEO = new THREE.RingGeometry(0.3, 0.5, 4, 1, 0, Math.PI * 0.5);
-  const BEACON_CROSS_MAT = new THREE.MeshBasicMaterial({ color: 0xff4433, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  // ---- Beacon -------------------------------------------------------------
+  const BEACON_GEO = new THREE.RingGeometry(0.6, 1.0, 24);
+  const BEACON_MAT = new THREE.MeshBasicMaterial({ color: 0xff3322, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
+  const BEACON_CROSS_GEO = new THREE.BoxGeometry(2.2, 0.06, 0.06);
 
-  const beaconRing = new THREE.Mesh(BEACON_GEO, BEACON_MAT.clone());
-  beaconRing.rotation.x = -Math.PI / 2;
-  beaconRing.visible = false;
-  beaconRing.frustumCulled = false;
-  SCENE.add(beaconRing);
+  function buildBeacon() {
+    const g = new THREE.Group();
+    const ring = new THREE.Mesh(BEACON_GEO, BEACON_MAT.clone());
+    ring.rotation.x = -Math.PI / 2;
+    g.add(ring);
+    const c1 = new THREE.Mesh(BEACON_CROSS_GEO, BEACON_MAT.clone());
+    g.add(c1);
+    const c2 = new THREE.Mesh(BEACON_CROSS_GEO, BEACON_MAT.clone());
+    c2.rotation.y = Math.PI / 2;
+    g.add(c2);
+    g.visible = false;
+    SCENE.add(g);
+    return g;
+  }
 
-  const beaconCross1 = new THREE.Mesh(BEACON_CROSS_GEO, BEACON_CROSS_MAT.clone());
-  beaconCross1.rotation.x = -Math.PI / 2;
-  beaconCross1.visible = false;
-  beaconCross1.frustumCulled = false;
-  SCENE.add(beaconCross1);
-
-  const beaconCross2 = new THREE.Mesh(BEACON_CROSS_GEO, BEACON_CROSS_MAT.clone());
-  beaconCross2.rotation.x = -Math.PI / 2;
-  beaconCross2.visible = false;
-  beaconCross2.frustumCulled = false;
-  SCENE.add(beaconCross2);
-
-  // ---- Bomb visuals ------------------------------------------------------
-  const BOMB_GEO = new THREE.CylinderGeometry(0.15, 0.1, 0.7, 6);
+  // ---- Bombs --------------------------------------------------------------
+  const BOMB_GEO = new THREE.CylinderGeometry(0.18, 0.1, 0.6, 6);
   BOMB_GEO.rotateX(Math.PI / 2);
-  const BOMB_MAT = new THREE.MeshStandardMaterial({ color: 0x2a2a22, roughness: 0.6, metalness: 0.5 });
-  const BOMB_FIN_GEO = new THREE.BoxGeometry(0.03, 0.25, 0.2);
-  const BOMB_FIN_MAT = new THREE.MeshStandardMaterial({ color: 0x1a1a15, roughness: 0.7 });
-  const TRAIL_GEO = new THREE.ConeGeometry(0.1, 1.0, 5);
-  TRAIL_GEO.rotateX(Math.PI);
-  const TRAIL_MAT = new THREE.MeshBasicMaterial({ color: 0xffaa44, transparent: true, opacity: 0.5, blending: THREE.AdditiveBlending, depthWrite: false });
+  const BOMB_MAT = new THREE.MeshStandardMaterial({ color: 0x2a2a22, roughness: 0.5, metalness: 0.6 });
+  const BOMB_TAIL_GEO = new THREE.BoxGeometry(0.4, 0.3, 0.03);
 
-  // ---- Explosion visuals -------------------------------------------------
-  const FLASH_GEO = new THREE.SphereGeometry(BOMB_RADIUS, 12, 10);
-  const FLASH_MAT = new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+  // ---- Explosion effects --------------------------------------------------
+  const FLASH_GEO = new THREE.SphereGeometry(1, 10, 8);
+  const FLASH_MAT = new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false });
   const SHOCK_GEO = new THREE.RingGeometry(0.5, 1.0, 32);
-  const SHOCK_MAT = new THREE.MeshBasicMaterial({ color: 0xffaa55, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
-  const SPARK_GEO = new THREE.SphereGeometry(0.15, 5, 4);
-  const SPARK_MAT = new THREE.MeshBasicMaterial({ color: 0xffcc44, transparent: true, opacity: 1, blending: THREE.AdditiveBlending, depthWrite: false });
-  const SMOKE_GEO = new THREE.SphereGeometry(0.6, 6, 5);
-  const SMOKE_MAT = new THREE.MeshBasicMaterial({ color: 0x3a3a30, transparent: true, opacity: 0, depthWrite: false });
-
-  const flashes = [];
-  for (let i = 0; i < BOMB_COUNT; i++) {
-    const m = new THREE.Mesh(FLASH_GEO, FLASH_MAT.clone());
-    m.visible = false;
-    m.frustumCulled = false;
-    SCENE.add(m);
-    flashes.push(m);
-  }
-
-  const shocks = [];
-  for (let i = 0; i < BOMB_COUNT; i++) {
-    const m = new THREE.Mesh(SHOCK_GEO, SHOCK_MAT.clone());
-    m.rotation.x = -Math.PI / 2;
-    m.visible = false;
-    m.frustumCulled = false;
-    SCENE.add(m);
-    shocks.push(m);
-  }
+  const SHOCK_MAT = new THREE.MeshBasicMaterial({ color: 0xff8833, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending });
 
   const sparks = [];
   for (let i = 0; i < SPARK_POOL; i++) {
-    const m = new THREE.Mesh(SPARK_GEO, SPARK_MAT.clone());
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.15, 4, 3), new THREE.MeshBasicMaterial({ color: 0xffaa44, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
     m.visible = false;
     m.frustumCulled = false;
     SCENE.add(m);
@@ -170,456 +137,438 @@ const Airstrike = (() => {
 
   const smokes = [];
   for (let i = 0; i < SMOKE_POOL; i++) {
-    const m = new THREE.Mesh(SMOKE_GEO, SMOKE_MAT.clone());
+    const m = new THREE.Mesh(new THREE.SphereGeometry(0.6, 5, 4), new THREE.MeshBasicMaterial({ color: 0x555555, transparent: true, opacity: 0, depthWrite: false }));
     m.visible = false;
     m.frustumCulled = false;
     SCENE.add(m);
-    smokes.push({ mesh: m, life: 0, vy: 0, active: false });
+    smokes.push({ mesh: m, life: 0, maxLife: SMOKE_LIFE, vx: 0, vy: 0, vz: 0, active: false });
   }
   let smokeIdx = 0;
 
-  // ---- HUD ---------------------------------------------------------------
-  const hud = document.getElementById('hud');
-  const wrap = document.createElement('div');
-  wrap.style.cssText = 'position:absolute;left:16px;bottom:278px;width:170px;font-size:11px;letter-spacing:2px;text-shadow:0 1px 3px #000;z-index:6;';
-  if (hud) hud.appendChild(wrap);
-  const label = document.createElement('div');
-  label.style.cssText = 'color:#ff6644;margin-bottom:3px;';
-  label.textContent = 'AIRSTRIKE [G]';
-  wrap.appendChild(label);
-  const bar = document.createElement('div');
-  bar.style.cssText = 'width:100%;height:7px;background:rgba(0,0,0,0.55);border:1px solid rgba(255,80,50,0.35);border-radius:4px;overflow:hidden;';
-  const fill = document.createElement('div');
-  fill.style.cssText = 'width:100%;height:100%;background:linear-gradient(90deg,#cc3322,#ff6644);border-radius:3px;transition:width 0.08s linear;';
-  bar.appendChild(fill);
-  wrap.appendChild(bar);
-  const statusEl = document.createElement('div');
-  statusEl.style.cssText = 'margin-top:3px;font-size:9px;letter-spacing:1px;color:#ff6644;opacity:0.6;';
-  statusEl.textContent = 'READY';
-  wrap.appendChild(statusEl);
-
-  function updateHUD() {
-    const frac = state.ready ? 1 : (1 - state.cd / COOLDOWN_MAX);
-    fill.style.width = Math.max(0, Math.min(1, frac)) * 100 + '%';
-    if (state.ready) {
-      statusEl.textContent = 'READY';
-      statusEl.style.opacity = '0.9';
-    } else {
-      statusEl.textContent = 'CHARGING';
-      statusEl.style.opacity = '0.5';
-    }
+  const craters = [];
+  const CRATER_GEO = new THREE.CircleGeometry(1, 12);
+  for (let i = 0; i < CRATER_COUNT; i++) {
+    const m = new THREE.Mesh(CRATER_GEO, new THREE.MeshBasicMaterial({ color: 0x1a1008, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+    m.rotation.x = -Math.PI / 2;
+    m.visible = false;
+    SCENE.add(m);
+    craters.push(m);
   }
+  let craterIdx = 0;
 
-  // ---- Input -------------------------------------------------------------
-  window.addEventListener('keydown', (e) => {
-    if (e.key !== 'g' && e.key !== 'G') return;
-    if (window.Manager && window.Manager.state && window.Manager.state.phase !== 'playing') return;
-    if (!window.Player || !Player.state.locked) return;
-    activate();
-  });
-
-  function activate() {
-    if (!state.ready) {
-      if (window.FX) window.FX.message('AIRSTRIKE RECHARGING', '#ff6644');
-      return;
-    }
-    const p = window.Player ? window.Player.state : null;
-    if (p && p.stamina !== undefined && p.stamina < STAMINA_COST) {
-      if (window.FX) window.FX.message('INSUFFICIENT STAMINA', '#ff6644');
-      return;
-    }
-    if (p && p.stamina !== undefined) {
-      p.stamina -= STAMINA_COST;
-      if (p.regenTimer !== undefined) p.regenTimer = 1.5;
-    }
-
-    // Lase ground target at crosshair.
-    const cam = window.CAMERA;
-    if (!cam) return;
-    _ray.setFromCamera({ x: 0, y: 0 }, cam);
-    const hit = _ray.ray.intersectPlane(_ground, _v1);
-    if (!hit) return;
-
-    state.center.copy(hit);
-    state.center.y = groundY(hit.x, hit.z);
-    state.ready = false;
-    state.cd = COOLDOWN_MAX;
-    state.phase = 'beacon';
-    state.timer = 0;
-    state.beaconT = 0;
-
-    // Place beacon visuals.
-    beaconRing.position.set(state.center.x, state.center.y + 0.05, state.center.z);
-    beaconRing.material.opacity = 0.7;
-    beaconRing.visible = true;
-    beaconCross1.position.set(state.center.x, state.center.y + 0.06, state.center.z);
-    beaconCross1.material.opacity = 0.8;
-    beaconCross1.visible = true;
-    beaconCross2.position.copy(beaconCross1.position);
-    beaconCross2.rotation.z = Math.PI / 2;
-    beaconCross2.material.opacity = 0.8;
-    beaconCross2.visible = true;
-
-    // Choose run direction perpendicular to camera facing for best visual.
-    cam.getWorldDirection(_v2);
-    state.runDir.set(-_v2.z, 0, _v2.x).normalize();
-
-    // Build jet if needed.
-    if (!state.jetMesh) state.jetMesh = buildJet();
-
-    if (window.FX) window.FX.message('AIRSTRIKE INBOUND', '#ffaa44');
-    if (window.Sound) {
-      window.Sound.tone(180, 0.3, 'sawtooth', 0.25, 600);
-      window.Sound.tone(360, 0.2, 'square', 0.15, 1000);
-    }
-    updateHUD();
-  }
-
-  function startJetRun() {
-    const startOffset = _v1.copy(state.runDir).multiplyScalar(-110);
-    state.jetPos.set(state.center.x + startOffset.x, JET_ALT, state.center.z + startOffset.z);
-    state.jetMesh.position.copy(state.jetPos);
-    const yaw = Math.atan2(state.runDir.x, state.runDir.z);
-    state.jetMesh.rotation.set(0, yaw, 0);
-    state.jetMesh.visible = true;
-    state.phase = 'jet_approach';
-    state.timer = 0;
-    state.bombTimer = 0;
-    state.bombsDropped = 0;
-    state.bombs.length = 0;
-    if (window.Sound) window.Sound.tone(80, 1.5, 'sawtooth', 0.3, 200);
-  }
-
-  function dropBomb() {
-    const offset = _v1.copy(state.runDir).multiplyScalar(state.bombsDropped * BOMB_SPACING);
-    const x = state.center.x + offset.x;
-    const z = state.center.z + offset.z;
-    const gy = groundY(x, z);
-
-    const bombMesh = new THREE.Mesh(BOMB_GEO, BOMB_MAT);
-    bombMesh.castShadow = false;
-    const fin = new THREE.Mesh(BOMB_FIN_GEO, BOMB_FIN_MAT);
-    fin.position.set(0, 0, -0.35);
-    bombMesh.add(fin);
-    const trail = new THREE.Mesh(TRAIL_GEO, TRAIL_MAT.clone());
-    trail.position.z = 0.7;
-    bombMesh.add(trail);
-    bombMesh.position.set(x, JET_ALT, z);
-    bombMesh.quaternion.copy(state.jetMesh.quaternion);
-    SCENE.add(bombMesh);
-
-    state.bombs.push({
-      mesh: bombMesh,
-      x: x, z: z, gy: gy,
-      t: 0,
-      exploded: false,
-    });
-    state.bombsDropped++;
-
-    if (window.Sound) window.Sound.tone(440, 0.05, 'square', 0.1, 800);
-  }
-
-  function detonateBomb(bomb) {
-    bomb.exploded = true;
-    const fx = bomb.x, fz = bomb.z, fy = bomb.gy;
-
-    // Flash.
-    const flash = flashes[state.bombs.indexOf(bomb) % flashes.length];
-    flash.position.set(fx, fy + 1, fz);
-    flash.material.opacity = 0.9;
-    flash.scale.setScalar(0.5);
-    flash.visible = true;
-
-    // Shock ring.
-    const shock = shocks[state.bombs.indexOf(bomb) % shocks.length];
-    shock.position.set(fx, fy + 0.1, fz);
-    shock.material.opacity = 0.8;
-    shock.scale.setScalar(0.3);
-    shock.visible = true;
-
-    // Sparks.
-    for (let i = 0; i < 10; i++) {
+  function spawnSparks(x, y, z, n) {
+    for (let i = 0; i < n; i++) {
       const s = sparks[sparkIdx];
       sparkIdx = (sparkIdx + 1) % SPARK_POOL;
-      const ang = Math.random() * Math.PI * 2;
-      const spd = 8 + Math.random() * 14;
-      s.mesh.position.set(fx, fy + 0.5, fz);
-      s.vx = Math.cos(ang) * spd;
-      s.vy = 4 + Math.random() * 10;
-      s.vz = Math.sin(ang) * spd;
+      const a = Math.random() * Math.PI * 2;
+      const up = 0.5 + Math.random();
+      const spd = 6 + Math.random() * 10;
+      s.vx = Math.cos(a) * spd;
+      s.vy = up * spd;
+      s.vz = Math.sin(a) * spd;
       s.life = SPARK_LIFE * (0.6 + Math.random() * 0.5);
+      s.mesh.position.set(x, y, z);
+      s.mesh.scale.setScalar(0.5 + Math.random());
       s.mesh.material.opacity = 1;
       s.mesh.visible = true;
       s.active = true;
     }
-
-    // Smoke.
-    for (let i = 0; i < 4; i++) {
-      const sm = smokes[smokeIdx];
-      smokeIdx = (smokeIdx + 1) % SMOKE_POOL;
-      const ang = Math.random() * Math.PI * 2;
-      const dist = Math.random() * BOMB_RADIUS * 0.6;
-      sm.mesh.position.set(fx + Math.cos(ang) * dist, fy + 0.5 + Math.random() * 2, fz + Math.sin(ang) * dist);
-      sm.mesh.scale.setScalar(0.5 + Math.random() * 0.8);
-      sm.vy = 1.5 + Math.random() * 2;
-      sm.life = SMOKE_LIFE * (0.7 + Math.random() * 0.5);
-      sm.mesh.material.opacity = 0.6;
-      sm.mesh.visible = true;
-      sm.active = true;
-    }
-
-    // Craters.
-    if (window.Craters) window.Craters.create(fx, fz, BOMB_RADIUS * 0.8);
-    if (window.BloodPools) window.BloodPools.spawn(fx, fz, 1.2);
-
-    // Damage entities in radius.
-    if (window.Entities && window.Grid) {
-      const ents = window.Grid.queryRadius(fx, fz, BOMB_RADIUS, [], (e) => !e.dead);
-      for (let i = 0; i < ents.length; i++) {
-        const e = ents[i];
-        if (!e.mesh) continue;
-        const dx = e.mesh.position.x - fx;
-        const dz = e.mesh.position.z - fz;
-        const dist = Math.sqrt(dx * dx + dz * dz);
-        if (dist > BOMB_RADIUS) continue;
-        const falloff = 1 - (dist / BOMB_RADIUS) * 0.5;
-        const dmg = BOMB_DAMAGE * falloff;
-        if (typeof e.takeDamage === 'function') {
-          e.takeDamage(dmg, 'explosion', null);
-        } else if (e.hp !== undefined) {
-          e.hp -= dmg;
-          if (e.hp <= 0 && !e.dead) {
-            e.dead = true;
-            if (window.Entities && window.Entities.onKill) window.Entities.onKill(e);
-          }
-        }
-        // Knockback.
-        if (dist > 0.1 && e.vel) {
-          const kb = (1 - dist / BOMB_RADIUS) * 18;
-          e.vel.x += (dx / dist) * kb;
-          e.vel.z += (dz / dist) * kb;
-          e.vel.y += (1 - dist / BOMB_RADIUS) * 8;
-        }
-        if (window.FX && e.mesh) {
-          window.FX.burst(e.mesh.position, new THREE.Vector3(0, 1, 0), 0xff4422, 8);
-        }
-      }
-    }
-
-    // Player damage.
-    const cam = window.CAMERA;
-    const ms = window.Manager;
-    if (cam && ms && ms.state && ms.state.playerAlive) {
-      const pdx = cam.position.x - fx;
-      const pdz = cam.position.z - fz;
-      const pdist = Math.sqrt(pdx * pdx + pdz * pdz);
-      if (pdist < BOMB_RADIUS) {
-        const pdmg = BOMB_DAMAGE * (1 - pdist / BOMB_RADIUS) * 0.45;
-        ms.damagePlayer(pdmg);
-        if (window.FX) window.FX.shake(0.25);
-      }
-    }
-
-    // Clean up bomb mesh.
-    SCENE.remove(bomb.mesh);
-    if (bomb.mesh.children) {
-      for (const c of bomb.mesh.children) {
-        if (c.material && c.material.dispose && c.material !== BOMB_FIN_MAT) c.material.dispose();
-      }
-    }
-    bomb.mesh = null;
-
-    if (window.Sound) {
-      window.Sound.tone(60, 0.3, 'sawtooth', 0.4, 200);
-      window.Sound.tone(120, 0.15, 'square', 0.2, 400);
-    }
-    if (window.FX) window.FX.shake(0.12);
   }
 
-  function update(dt) {
-    // Cooldown.
-    if (!state.ready) {
-      state.cd -= dt;
-      if (state.cd <= 0) {
-        state.cd = 0;
-        state.ready = true;
-        updateHUD();
-      } else if (state.phase === 'idle') {
-        updateHUD();
-      }
+  function spawnSmoke(x, y, z, n) {
+    for (let i = 0; i < n; i++) {
+      const s = smokes[smokeIdx];
+      smokeIdx = (smokeIdx + 1) % SMOKE_POOL;
+      s.vx = (Math.random() - 0.5) * 2;
+      s.vy = 1.5 + Math.random() * 2;
+      s.vz = (Math.random() - 0.5) * 2;
+      s.life = SMOKE_LIFE * (0.7 + Math.random() * 0.5);
+      s.maxLife = s.life;
+      s.mesh.position.set(x, y + 0.3, z);
+      s.mesh.scale.setScalar(0.5 + Math.random());
+      s.mesh.material.opacity = 0.5;
+      s.mesh.visible = true;
+      s.active = true;
     }
+  }
 
-    // Phase: beacon lasing.
-    if (state.phase === 'beacon') {
-      state.beaconT += dt;
-      const t = state.beaconT / BEACON_LIFE;
-      beaconRing.scale.setScalar(0.6 + Math.sin(state.beaconT * 8) * 0.08);
-      beaconCross1.rotation.z += dt * 3;
-      beaconCross2.rotation.z -= dt * 2;
-      if (state.beaconT >= BEACON_LIFE) {
-        beaconRing.visible = false;
-        beaconCross1.visible = false;
-        beaconCross2.visible = false;
-        startJetRun();
-      }
+  function spawnCrater(x, z, radius) {
+    const m = craters[craterIdx];
+    craterIdx = (craterIdx + 1) % CRATER_COUNT;
+    const gy = groundY(x, z) + 0.06;
+    m.position.set(x, gy, z);
+    m.scale.setScalar(radius * 0.8);
+    m.rotation.z = Math.random() * Math.PI * 2;
+    m.material.opacity = 0.75;
+    m.visible = true;
+  }
+
+  function detonateBomb(x, y, z) {
+    spawnSparks(x, y, z, 10);
+    spawnSmoke(x, y, z, 3);
+    spawnCrater(x, z, BOMB_RADIUS);
+    if (window.Craters) window.Craters.create(x, z, BOMB_RADIUS * 0.7);
+    if (window.BloodPools) window.BloodPools.spawn(x, z, 1.0);
+    if (window.FireProp && window.FireProp.igniteArea) {
+      window.FireProp.igniteArea(x, z, BOMB_RADIUS * 0.6);
     }
-
-    // Phase: jet approach.
-    if (state.phase === 'jet_approach') {
-      state.timer += dt;
-      const speed = JET_SPEED;
-      state.jetPos.addScaledVector(state.runDir, speed * dt);
-      state.jetMesh.position.copy(state.jetPos);
-
-      // Gentle bob.
-      state.jetMesh.position.y = JET_ALT + Math.sin(state.timer * 2) * 0.3;
-
-      // Bank slightly.
-      state.jetMesh.rotation.z = Math.sin(state.timer * 1.5) * 0.05;
-
-      // Start dropping bombs when jet reaches the center zone.
-      const distToCenter = Math.abs(_v1.copy(state.jetPos).sub(state.center).dot(state.runDir));
-      if (distToCenter < 15 && state.bombsDropped === 0) {
-        state.phase = 'jet_bombing';
-        state.bombTimer = 0;
-      }
-
-      // Depart after passing.
-      if (distToCenter > 110) {
-        state.phase = 'jet_depart';
-        state.timer = 0;
-      }
-    }
-
-    // Phase: jet bombing run.
-    if (state.phase === 'jet_bombing') {
-      state.timer += dt;
-      state.jetPos.addScaledVector(state.runDir, JET_SPEED * dt);
-      state.jetMesh.position.copy(state.jetPos);
-      state.jetMesh.position.y = JET_ALT + Math.sin(state.timer * 2) * 0.3;
-
-      state.bombTimer += dt;
-      const bombInterval = BOMB_FALL_TIME / BOMB_COUNT * 0.8;
-      if (state.bombTimer >= bombInterval && state.bombsDropped < BOMB_COUNT) {
-        state.bombTimer = 0;
-        dropBomb();
-      }
-
-      if (state.bombsDropped >= BOMB_COUNT) {
-        state.phase = 'jet_depart';
-        state.timer = 0;
-      }
-    }
-
-    // Phase: jet departure.
-    if (state.phase === 'jet_depart') {
-      state.timer += dt;
-      state.jetPos.addScaledVector(state.runDir, JET_SPEED * dt);
-      state.jetMesh.position.copy(state.jetPos);
-      if (state.timer > JET_DEPART) {
-        state.jetMesh.visible = false;
-        if (state.bombs.every((b) => b.exploded || !b.mesh)) {
-          state.phase = 'idle';
-        } else {
-          state.phase = 'finishing';
+    const ents = window.Entities && window.Entities.list ? window.Entities.list : [];
+    const cam = window.CAMERA;
+    let camShake = 0;
+    for (let i = 0; i < ents.length; i++) {
+      const e = ents[i];
+      if (e.dead) continue;
+      const dx = e.mesh.position.x - x;
+      const dz = e.mesh.position.z - z;
+      const dist = Math.sqrt(dx * dx + dz * dz);
+      if (dist <= BOMB_RADIUS) {
+        const falloff = 1 - dist / BOMB_RADIUS;
+        const dmg = BOMB_DAMAGE * (0.4 + falloff * 0.6);
+        if (e.takeDamage) {
+          const killed = e.takeDamage(dmg, 'explosion');
+          if (killed && e.team !== getPlayerTeam()) registerPlayerKill(e.team);
         }
       }
     }
+    if (cam) {
+      const cdx = cam.position.x - x;
+      const cdz = cam.position.z - z;
+      const cdist = Math.sqrt(cdx * cdx + cdz * cdz);
+      if (cdist < 20) camShake = (1 - cdist / 20) * 0.25;
+    }
+    if (camShake > 0 && window.FX && window.FX.shake) window.FX.shake(camShake);
+    if (window.Sound) {
+      window.Sound.tone(60, 0.5, 'sawtooth', 0.4, 200);
+      window.Sound.tone(40, 0.4, 'square', 0.3, 120);
+    }
+  }
 
-    // Phase: wait for remaining bombs.
-    if (state.phase === 'finishing') {
-      let allDone = true;
-      for (const b of state.bombs) {
-        if (!b.exploded) { allDone = false; break; }
+  function getPlayerTeam() {
+    return (window.Manager && window.Manager.state) ? window.Manager.state.playerTeam : 'hunter';
+  }
+
+  function registerPlayerKill(victimTeam) {
+    if (window.KillRewards && window.KillRewards.notify) window.KillRewards.notify(victimTeam);
+  }
+
+  function call() {
+    if (!state.ready) {
+      if (window.FX) window.FX.message('AIRSTRIKE RECHARGING', '#ff6644');
+      return;
+    }
+    if (!hasKills()) {
+      if (window.FX) window.FX.message('NOT ENOUGH KILLS — NEED ' + KILLS_COST, '#ff6644');
+      return;
+    }
+    const player = window.Player;
+    if (player && player.state && player.state.stamina < STAMINA_COST) {
+      if (window.FX) window.FX.message('INSUFFICIENT STAMINA', '#ff6644');
+      return;
+    }
+    if (player && player.state) {
+      player.state.stamina -= STAMINA_COST;
+      player.state.regenTimer = 1.5;
+    }
+    const cam = window.CAMERA;
+    _v1.set(0, 0, -1);
+    cam.getWorldDirection(_v1);
+    _v1.y = 0;
+    _v1.normalize();
+    _ray.setFromCamera({ x: 0, y: 0 }, cam);
+    if (!_ray.ray.intersectPlane(_ground, state.center)) return;
+    state.center.y = groundY(state.center.x, state.center.z);
+    const maxR = 100;
+    const dist = Math.min(state.center.distanceTo(cam.position), maxR);
+    state.center.copy(cam.position).addScaledVector(_v1, dist);
+    state.center.y = groundY(state.center.x, state.center.z);
+    state.runDir.set(Math.random() - 0.5, 0, Math.random() - 0.5).normalize();
+    state.ready = false;
+    state.cd = COOLDOWN_MAX;
+    state.phase = 'beacon';
+    state.timer = BEACON_LIFE;
+    state.beaconT = 0;
+    consumeKills();
+    if (state.beaconMesh) state.beaconMesh.visible = true;
+    if (state.beaconMesh) {
+      state.beaconMesh.position.copy(state.center);
+      state.beaconMesh.position.y += 0.1;
+    }
+    if (window.FX) window.FX.message('AIRSTRIKE INBOUND', '#ff8833');
+    if (window.Sound) {
+      window.Sound.tone(300, 0.2, 'square', 0.2, 1000);
+      window.Sound.tone(500, 0.15, 'square', 0.15, 1500);
+    }
+  }
+
+  function launchJet() {
+    state.phase = 'approach';
+    state.timer = JET_APPROACH;
+    state.bombTimer = 0.3;
+    state.bombsDropped = 0;
+    if (!state.jetMesh) state.jetMesh = buildJet();
+    state.jetPos.copy(state.center).addScaledVector(state.runDir, -90);
+    state.jetPos.y = JET_ALT;
+    state.jetMesh.position.copy(state.jetPos);
+    state.jetMesh.lookAt(state.center.x, JET_ALT, state.center.z);
+    state.jetMesh.visible = true;
+    if (window.Sound) {
+      window.Sound.tone(80, 1.5, 'sawtooth', 0.3, 400);
+    }
+  }
+
+  function spawnBomb(x, y, z) {
+    const m = new THREE.Mesh(BOMB_GEO, BOMB_MAT);
+    m.position.set(x, y, z);
+    m.lookAt(x, 0, z + 1);
+    SCENE.add(m);
+    const tail = new THREE.Mesh(BOMB_TAIL_GEO, new THREE.MeshBasicMaterial({ color: 0xaaaaaa, transparent: true, opacity: 0.5 }));
+    tail.position.z = 0.35;
+    m.add(tail);
+    const flash = new THREE.Mesh(FLASH_GEO, FLASH_MAT.clone());
+    flash.scale.setScalar(0.5);
+    flash.visible = false;
+    SCENE.add(flash);
+    const shock = new THREE.Mesh(SHOCK_GEO, SHOCK_MAT.clone());
+    shock.rotation.x = -Math.PI / 2;
+    shock.visible = false;
+    SCENE.add(shock);
+    state.bombs.push({ mesh: m, flash, shock, fall: 0, startY: y, targetX: x, targetZ: z, detonated: false, flashT: 0 });
+  }
+
+  function startBombRun() {
+    state.phase = 'bombing';
+    state.bombTimer = 0;
+    for (let i = 0; i < BOMB_COUNT; i++) {
+      const offset = (i - (BOMB_COUNT - 1) / 2) * BOMB_SPACING;
+      const bx = state.center.x + state.runDir.x * offset + (Math.random() - 0.5) * 1.5;
+      const bz = state.center.z + state.runDir.z * offset + (Math.random() - 0.5) * 1.5;
+      spawnBomb(bx, JET_ALT - 2, bz);
+    }
+  }
+
+  function updateBeacon(dt) {
+    state.timer -= dt;
+    state.beaconT += dt;
+    if (state.beaconMesh) {
+      const pulse = 1 + Math.sin(state.beaconT * 8) * 0.15;
+      state.beaconMesh.scale.setScalar(pulse);
+      const fade = Math.max(0, state.timer / BEACON_LIFE);
+      state.beaconMesh.children.forEach(c => { if (c.material) c.material.opacity = 0.7 * fade; });
+      state.beaconMesh.rotation.y += dt * 2;
+    }
+    if (state.timer <= 0) {
+      if (state.beaconMesh) state.beaconMesh.visible = false;
+      launchJet();
+    }
+  }
+
+  function updateJet(dt) {
+    state.timer -= dt;
+    if (state.phase === 'approach') {
+      const t = 1 - state.timer / JET_APPROACH;
+      state.jetPos.lerpVectors(
+        _v1.copy(state.center).addScaledVector(state.runDir, -90).setY(JET_ALT),
+        _v2.copy(state.center).addScaledVector(state.runDir, -10).setY(JET_ALT),
+        t
+      );
+      state.jetMesh.position.copy(state.jetPos);
+      state.jetMesh.lookAt(state.center.x, JET_ALT, state.center.z);
+      if (state.timer <= 0) startBombRun();
+    } else if (state.phase === 'bombing') {
+      state.jetPos.addScaledVector(state.runDir, JET_SPEED * dt);
+      state.jetMesh.position.copy(state.jetPos);
+      state.bombTimer -= dt;
+      if (state.bombsDropped < BOMB_COUNT && state.bombTimer <= 0) {
+        state.bombTimer = BOMB_SPACING / JET_SPEED;
+        state.bombsDropped++;
       }
-      if (allDone) state.phase = 'idle';
-    }
-
-    // Update falling bombs.
-    for (const b of state.bombs) {
-      if (b.exploded || !b.mesh) continue;
-      b.t += dt;
-      const frac = Math.min(1, b.t / BOMB_FALL_TIME);
-      const startY = JET_ALT;
-      b.mesh.position.y = startY + (b.gy - startY) * frac;
-      // Spin slightly.
-      b.mesh.rotateZ(dt * 2);
-      if (frac >= 1) {
-        detonateBomb(b);
+      if (state.bombsDropped >= BOMB_COUNT && state.timer <= -0.5) {
+        state.phase = 'depart';
+        state.timer = JET_DEPART;
       }
+    } else if (state.phase === 'depart') {
+      state.jetPos.addScaledVector(state.runDir, JET_SPEED * dt);
+      state.jetMesh.position.copy(state.jetPos);
+      if (state.timer <= 0) {
+        state.jetMesh.visible = false;
+        state.phase = 'cleanup';
+        state.timer = 2.0;
+      }
+    } else if (state.phase === 'cleanup') {
+      if (state.timer <= 0) state.phase = 'idle';
     }
+  }
 
-    // Update flash fade.
-    for (const f of flashes) {
-      if (!f.visible) continue;
-      f.material.opacity *= Math.max(0, 1 - dt * 6);
-      f.scale.multiplyScalar(1 + dt * 4);
-      if (f.material.opacity < 0.02) f.visible = false;
-    }
-
-    // Update shock rings.
-    for (const s of shocks) {
-      if (!s.visible) continue;
-      s.material.opacity *= Math.max(0, 1 - dt * 4);
-      s.scale.multiplyScalar(1 + dt * 8);
-      if (s.material.opacity < 0.02) s.visible = false;
-    }
-
-    // Update sparks.
-    for (const s of sparks) {
-      if (!s.active) continue;
-      s.life -= dt;
-      if (s.life <= 0) {
-        s.mesh.visible = false;
-        s.active = false;
+  function updateBombs(dt) {
+    for (let i = state.bombs.length - 1; i >= 0; i--) {
+      const b = state.bombs[i];
+      if (b.detonated) {
+        b.flashT -= dt;
+        if (b.flashT <= 0) {
+          SCENE.remove(b.mesh);
+          SCENE.remove(b.flash);
+          SCENE.remove(b.shock);
+          state.bombs.splice(i, 1);
+        } else {
+          const t = b.flashT / 0.3;
+          b.flash.material.opacity = t * 0.9;
+          b.flash.scale.setScalar(1 + (1 - t) * 3);
+          b.shock.material.opacity = t * 0.6;
+          b.shock.scale.setScalar(1 + (1 - t) * BOMB_RADIUS);
+        }
         continue;
       }
+      b.fall += dt;
+      const frac = Math.min(1, b.fall / BOMB_FALL_TIME);
+      b.mesh.position.y = b.startY * (1 - frac);
+      b.mesh.rotation.x += dt * 3;
+      if (frac >= 1) {
+        b.detonated = true;
+        b.flashT = 0.3;
+        b.flash.position.set(b.targetX, groundY(b.targetX, b.targetZ) + 1, b.targetZ);
+        b.flash.visible = true;
+        b.shock.position.set(b.targetX, groundY(b.targetX, b.targetZ) + 0.1, b.targetZ);
+        b.shock.visible = true;
+        b.mesh.visible = false;
+        detonateBomb(b.targetX, groundY(b.targetX, b.targetZ), b.targetZ);
+      }
+    }
+  }
+
+  function updateParticles(dt) {
+    for (let i = 0; i < sparks.length; i++) {
+      const s = sparks[i];
+      if (!s.active) continue;
+      s.life -= dt;
+      if (s.life <= 0) { s.active = false; s.mesh.visible = false; continue; }
       s.vy -= 20 * dt;
       s.mesh.position.x += s.vx * dt;
       s.mesh.position.y += s.vy * dt;
       s.mesh.position.z += s.vz * dt;
-      s.mesh.material.opacity = Math.min(1, s.life / 0.2);
-      const sc = 0.5 + s.life * 0.8;
-      s.mesh.scale.setScalar(sc);
+      s.mesh.material.opacity = s.life / SPARK_LIFE;
+      const sc = s.life / SPARK_LIFE;
+      s.mesh.scale.setScalar(0.5 + sc);
     }
+    for (let i = 0; i < smokes.length; i++) {
+      const s = smokes[i];
+      if (!s.active) continue;
+      s.life -= dt;
+      if (s.life <= 0) { s.active = false; s.mesh.visible = false; continue; }
+      s.mesh.position.x += s.vx * dt;
+      s.mesh.position.y += s.vy * dt;
+      s.mesh.position.z += s.vz * dt;
+      s.mesh.material.opacity = (s.life / s.maxLife) * 0.5;
+      const grow = 1 + (1 - s.life / s.maxLife) * 2;
+      s.mesh.scale.setScalar(grow);
+    }
+  }
 
-    // Update smoke.
-    for (const sm of smokes) {
-      if (!sm.active) continue;
-      sm.life -= dt;
-      if (sm.life <= 0) {
-        sm.mesh.visible = false;
-        sm.active = false;
-        continue;
+  function updateHUD() {
+    const hud = document.getElementById('airstrike-hud');
+    if (!hud) return;
+    const curKills = getCurrentKills();
+    const flash = hud.querySelector('.as-flash');
+    if (state.ready && hasKills()) {
+      flash.textContent = 'READY [J]';
+      flash.style.color = '#ffdd44';
+    } else if (!state.ready) {
+      const pct = Math.round((1 - state.cd / COOLDOWN_MAX) * 100);
+      flash.textContent = 'RECHARGING ' + pct + '%';
+      flash.style.color = '#ff6644';
+    } else {
+      flash.textContent = curKills + '/' + KILLS_COST + ' KILLS';
+      flash.style.color = '#999999';
+    }
+  }
+
+  function init() {
+    state.beaconMesh = buildBeacon();
+    const hud = document.createElement('div');
+    hud.id = 'airstrike-hud';
+    hud.style.cssText = 'position:absolute;left:16px;bottom:282px;font-size:11px;letter-spacing:2px;text-shadow:0 1px 3px #000;z-index:6;';
+    const label = document.createElement('div');
+    label.style.cssText = 'color:#ff8833;margin-bottom:3px;';
+    label.textContent = 'AIRSTRIKE';
+    hud.appendChild(label);
+    const bar = document.createElement('div');
+    bar.style.cssText = 'width:90px;height:5px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,130,50,0.3);border-radius:3px;overflow:hidden;';
+    const fill = document.createElement('div');
+    fill.className = 'as-fill';
+    fill.style.cssText = 'width:100%;height:100%;background:linear-gradient(90deg,#ff6622,#ffaa44);border-radius:2px;transition:width 0.05s;';
+    bar.appendChild(fill);
+    hud.appendChild(bar);
+    const flash = document.createElement('div');
+    flash.className = 'as-flash';
+    flash.style.cssText = 'margin-top:3px;font-size:9px;letter-spacing:1px;color:#999;';
+    flash.textContent = 'READY [J]';
+    hud.appendChild(flash);
+    document.getElementById('hud').appendChild(hud);
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'j' && e.key !== 'J') return;
+      if (window.Manager && window.Manager.state && window.Manager.state.phase !== 'playing') return;
+      if (!window.Player || !Player.state.locked) return;
+      call();
+    });
+  }
+
+  function getCurrentKills() {
+    if (window.AirSupport) return window.AirSupport.getPoints();
+    return 0;
+  }
+
+  function hasKills() {
+    return getCurrentKills() >= KILLS_COST;
+  }
+
+  function consumeKills() {
+    if (window.AirSupport) window.AirSupport.spend(KILLS_COST);
+  }
+
+  function update(dt) {
+    if (state.cd > 0) {
+      state.cd -= dt;
+      if (state.cd <= 0) {
+        state.cd = 0;
+        state.ready = true;
       }
-      sm.mesh.position.y += sm.vy * dt;
-      sm.vy *= (1 - dt * 0.5);
-      sm.mesh.material.opacity = Math.min(0.6, sm.life / SMOKE_LIFE * 0.6);
-      sm.mesh.scale.multiplyScalar(1 + dt * 0.8);
+    }
+    if (state.phase !== 'idle') {
+      if (state.phase === 'beacon') updateBeacon(dt);
+      else updateJet(dt);
+      updateBombs(dt);
+    }
+    updateParticles(dt);
+    updateHUD();
+    const hud = document.getElementById('airstrike-hud');
+    if (hud) {
+      const fill = hud.querySelector('.as-fill');
+      if (fill) {
+        const pct = state.ready ? 100 : (1 - state.cd / COOLDOWN_MAX) * 100;
+        fill.style.width = pct + '%';
+      }
     }
   }
 
   function reset() {
-    state.cd = 0;
     state.ready = true;
+    state.cd = 0;
     state.phase = 'idle';
-    state.bombs.length = 0;
+    state.timer = 0;
+    state.bombsDropped = 0;
     if (state.jetMesh) state.jetMesh.visible = false;
-    beaconRing.visible = false;
-    beaconCross1.visible = false;
-    beaconCross2.visible = false;
-    for (const f of flashes) f.visible = false;
-    for (const s of shocks) s.visible = false;
-    for (const s of sparks) { s.active = false; s.mesh.visible = false; }
-    for (const sm of smokes) { sm.active = false; sm.mesh.visible = false; }
-    updateHUD();
+    if (state.beaconMesh) state.beaconMesh.visible = false;
+    for (let i = state.bombs.length - 1; i >= 0; i--) {
+      const b = state.bombs[i];
+      SCENE.remove(b.mesh);
+      SCENE.remove(b.flash);
+      SCENE.remove(b.shock);
+    }
+    state.bombs.length = 0;
+    for (let i = 0; i < sparks.length; i++) { sparks[i].active = false; sparks[i].mesh.visible = false; }
+    for (let i = 0; i < smokes.length; i++) { smokes[i].active = false; smokes[i].mesh.visible = false; }
   }
 
-  function init() {
-    updateHUD();
-  }
-
-  return { update, reset, init, state };
+  return { init, update, reset, state, call, KILLS_COST };
 })();
 
 window.Airstrike = Airstrike;
