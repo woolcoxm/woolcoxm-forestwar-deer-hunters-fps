@@ -180,8 +180,8 @@ const Manager = (() => {
     if (!state.playerAlive || state.phase !== 'playing') return;
     // Adrenaline overcharge shrugs off a fraction of incoming hits while active.
     if (window.Adrenaline && Adrenaline.isActive()) amount *= (1 - Adrenaline.getDamageResist());
-    // Ballistic vests absorb the incoming hit (post-adrenaline) before it bites into HP.
-    if (window.ArmorVest && amount > 0) amount = ArmorVest.absorbDamage(amount).damage;
+    // Ballistic vest (plates + regenerating overguard) absorbs the hit before it bites into HP.
+    if (window.ArmorVest && amount > 0) amount = ArmorVest.applyDamage(amount);
     state.playerHp -= amount;
     if (srcTeam && window.Radar) window.Radar.pulse();
     // Low-HP overcharge can kick in the instant you cross into the danger zone (but not on a fatal blow).

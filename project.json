@@ -7,6 +7,7 @@
     "ammo-drops.js",
     "ammo-satchel.js",
     "apc.js",
+    "armor-vest.js",
     "artillery.js",
     "barricade.js",
     "battle-scanner.js",
@@ -59,6 +60,7 @@
     "orbital-laser.js",
     "owl-strike.js",
     "pack-hunter.js",
+    "pack-tactics.js",
     "pickups.js",
     "player.js",
     "portals.js",
@@ -93,15 +95,14 @@
     "vehicle.js",
     "warbatteries.js",
     "warcry.js",
+    "water-holes.js",
     "weapons.js",
     "weather.js",
     "world.js",
-    "armor-vest.js",
-    "water-holes.js",
-    "pack-tactics.js"
+    "airstrike.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 141,
-  "updatedAt": 1785351791189,
+  "steps": 143,
+  "updatedAt": 1785351904340,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }

@@ -122,7 +122,8 @@ const ArmorVest = (() => {
     const hud = document.getElementById('hud');
     if (!hud) return;
     barEl = document.createElement('div');
-    barEl.style.cssText = 'position:absolute;bottom:54px;left:50%;transform:translateX(-50%);width:200px;height:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(100,150,220,0.45);border-radius:4px;overflow:hidden;display:none;z-index:6;';
+    // Sits in the bottom-left HUD rail, clear of the centred weapon / reload / stamina bars.
+    barEl.style.cssText = 'position:absolute;bottom:62px;left:16px;width:170px;height:8px;background:rgba(0,0,0,0.6);border:1px solid rgba(100,150,220,0.45);border-radius:4px;overflow:hidden;display:none;z-index:6;';
     barFill = document.createElement('div');
     barFill.style.cssText = 'width:100%;height:100%;background:linear-gradient(90deg,#2255aa,#4488ff);transition:width 0.1s;border-radius:3px;';
     barEl.appendChild(barFill);
@@ -131,7 +132,7 @@ const ArmorVest = (() => {
     barEl.appendChild(ogFill);
     hud.appendChild(barEl);
     label = document.createElement('div');
-    label.style.cssText = 'position:absolute;bottom:64px;left:50%;transform:translateX(-50%);font-size:10px;letter-spacing:3px;color:#66aaff;text-shadow:0 1px 3px #000;display:none;z-index:6;font-weight:bold;';
+    label.style.cssText = 'position:absolute;bottom:74px;left:16px;font-size:10px;letter-spacing:3px;color:#66aaff;text-shadow:0 1px 3px #000;display:none;z-index:6;font-weight:bold;';
     label.textContent = 'ARMOR';
     hud.appendChild(label);
   }
