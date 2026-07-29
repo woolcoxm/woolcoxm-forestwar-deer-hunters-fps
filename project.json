@@ -99,10 +99,11 @@
     "weapons.js",
     "weather.js",
     "world.js",
-    "airstrike.js"
+    "airstrike.js",
+    "supply-request.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 143,
-  "updatedAt": 1785351904340,
+  "steps": 144,
+  "updatedAt": 1785352183740,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }
