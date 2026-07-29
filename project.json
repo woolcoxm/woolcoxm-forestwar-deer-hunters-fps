@@ -103,10 +103,11 @@
     "supply-request.js",
     "thermal-flare.js",
     "mobile.js",
-    "viewmodel.js"
+    "viewmodel.js",
+    "compass.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 148,
-  "updatedAt": 1785352571502,
+  "steps": 150,
+  "updatedAt": 1785352723987,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }
