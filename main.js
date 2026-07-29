@@ -98,7 +98,7 @@
       const steps = [
         'Player', 'Chaingun', 'Killcam', 'Footsteps', 'Weapons', 'Entities', 'Herd', 'BloodPools', 'Craters', 'Suppression', 'Pickups', 'AmmoDrops', 'Objectives', 'Squads',
         'Vehicle', 'Boss', 'Reinforcements', 'Radar', 'Weather', 'Turret',
-        'Artillery', 'Traps', 'Beacon', 'Drone', 'CombatDrone', 'Melee', 'ThreatVision', 'SupplyRadar', 'APC', 'Smoke', 'OwlStrike', 'HeliStrike', 'AC130', 'Killstreak', 'Scoreboard', 'CombatText', 'Regen', 'Adrenaline', 'MedTent', 'ArmorVest', 'SupplyDrop', 'Portals', 'Fire', 'Emotes', 'Warcry', 'Stampede'
+        'Artillery', 'Traps', 'Beacon', 'Drone', 'CombatDrone', 'Melee', 'ThreatVision', 'SupplyRadar', 'APC', 'Smoke', 'OwlStrike', 'HeliStrike', 'AC130', 'Killstreak', 'Scoreboard', 'CombatText', 'KillPanel', 'Regen', 'Adrenaline', 'MedTent', 'ArmorVest', 'SupplyDrop', 'Portals', 'Fire', 'Emotes', 'Warcry', 'Stampede'
       ];
       for (const name of steps) {
         const m = window[name];

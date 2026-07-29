@@ -130,6 +130,10 @@ const Boss = (() => {
     boss.active = false;
     boss.phase = 'idle';
     if (window.FX) window.FX.message('MEGA-STAG DEFEATED', '#9fe8a0');
+    if (window.KillPanel && window.KillPanel.reportKill) {
+      const _pt = (window.Manager && window.Manager.state) ? window.Manager.state.playerTeam : 'hunter';
+      window.KillPanel.reportKill('MEGA-STAG', { byPlayer: _pt === 'hunter', playerKiller: _pt === 'hunter', method: 'ability', victimTeam: 'deer', killerTeam: 'hunter' });
+    }
     if (window.Manager) {
       window.Manager.state.kills.deer += 5;
       window.Manager.state.bossDefeated = true;

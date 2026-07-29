@@ -87,6 +87,10 @@ Survive as long as you can. Every **5 waves** a **Mega‑Stag boss** arrives.
   scattering and stun-knocking every enemy — and the boss — caught in the corridor.
   Long cooldown. Aim it at a clustered enemy formation for maximum carnage, and
   watch the ambient wildlife stampede away in panic.
+- **Live kill feed** — every takedown slides a card up the right edge of the
+  screen: **KILLER ▸ VICTIM** with a weapon icon, a headshot star, the points
+  earned and your current streak. Your own kills light up gold; your deaths flash
+  red. A running footer tallies session kills, points and best streak.
 - **Tactical HUD** — directional threat radar, capture-point tracker, killstreak
   bar, hold-`Tab` scoreboard with K/D and rank, and a live **tactical minimap**.
 - **Dynamic battlefield** — day/night sky, weather, a **Blood Moon** that enrages
@@ -108,7 +112,8 @@ game loop). Each feature is a self-contained module exposing `init` / `update` /
 `reset` and hanging its state off `window.*` globals:
 
 - **Core:** `index.html`, `main.js`, `manager.js` (waves/score/lifecycle),
-  `player.js`, `entities.js` (deer & hunter AI), `weapons.js`, `fx.js`, `sound.js`,
+  `player.js`, `entities.js` (deer & hunter AI), `weapons.js`, `fx.js`,
+  `combat-text.js`, `kill-panel.js` (floating damage + kill feed), `sound.js`,
   `music.js`, `sky.js`, `weather.js`, `world.js`.
 - **Abilities & killstreaks:** `stampede.js`, `warcry.js`, `owl-strike.js`,
   `heli-strike.js`, `ac130.js`, `chaingun.js`, `killstreak.js`, `kill-rewards.js`.

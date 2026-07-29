@@ -187,7 +187,7 @@ const Entities = (() => {
       window.BloodPools.spawn(e.mesh.position.x, e.mesh.position.z, 1.5);
     }
     corpses.push(e);
-    if (window.Manager && window.Manager.registerKill) window.Manager.registerKill(e.team);
+    if (window.Manager && window.Manager.registerKill) window.Manager.registerKill(e.team, e);
     if (window.FX && window.FX.message) {
       window.FX.message((e.team === 'deer' ? 'DEER' : 'HUNTER') + ' DOWN', e.team === 'deer' ? '#f0c98a' : '#c9d8ff');
     }
@@ -224,6 +224,8 @@ const Entities = (() => {
     let impactPos = null;
     if (srcInfo && typeof srcInfo === 'object' && 'x' in srcInfo) impactPos = srcInfo;
 
+    // Remember the fatal blow's crit flag so the kill feed can brand the card.
+    if (byPlayer) entity._killHeadshot = headshot;
     applyDamage(entity, dmg, impactPos);
 
     // Player-sourced hits earn floating damage numbers + crit feedback.

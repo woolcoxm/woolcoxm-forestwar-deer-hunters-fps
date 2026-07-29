@@ -114,10 +114,13 @@
     "water-holes.js",
     "weapons.js",
     "weather.js",
-    "world.js"
+    "world.js",
+    "supply-beacons.js",
+    "chaos-surge.js",
+    "central-beacon.js"
   ],
   "startedAt": 1785270587512,
-  "steps": 159,
-  "updatedAt": 1785356817989,
+  "steps": 162,
+  "updatedAt": 1785357146675,
   "repo": "https://github.com/woolcoxm/forestwar-deer-hunters-fps"
 }

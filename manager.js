@@ -113,6 +113,7 @@ const Manager = (() => {
     if (window.AC130 && window.AC130.reset) window.AC130.reset();
     if (window.Killstreak && window.Killstreak.reset) window.Killstreak.reset();
     if (window.Scoreboard && window.Scoreboard.reset) window.Scoreboard.reset();
+    if (window.KillPanel && window.KillPanel.reset) window.KillPanel.reset();
     if (window.MedTent && window.MedTent.reset) window.MedTent.reset();
     if (window.ArmorVest && window.ArmorVest.reset) window.ArmorVest.reset();
     if (window.SupplyDrop && window.SupplyDrop.reset) window.SupplyDrop.reset();
@@ -193,6 +194,11 @@ const Manager = (() => {
       state.playerHp = 0;
       state.playerAlive = false;
       recordKiller(srcTeam);
+      // Log your own downfall to the kill feed so every death is felt.
+      if (window.KillPanel && window.KillPanel.reportKill) {
+        const kTeam = (srcTeam === 'deer' || srcTeam === 'hunter') ? srcTeam : null;
+        window.KillPanel.reportKill('YOU', { playerVictim: true, victimTeam: state.playerTeam, killerTeam: kTeam });
+      }
       // Align the respawn window with the killcam orbit (measured in slowed sim time).
       state.respawnTimer = (window.Killcam && Killcam.DURATION) ? (Killcam.DURATION * Killcam.SLOWMO) : 3;
       if (window.Player) Player.state.locked = false;
@@ -246,7 +252,7 @@ const Manager = (() => {
     state.score[team] += amount;
   }
 
-  function registerKill(victimTeam) {
+  function registerKill(victimTeam, entity) {
     if (!state.kills[victimTeam]) return;
     state.kills[victimTeam]++;
     const killerTeam = victimTeam === 'deer' ? 'hunter' : 'deer';
@@ -254,6 +260,24 @@ const Manager = (() => {
     if (window.Squads && window.Squads.pushKill) {
       const label = killerTeam === state.playerTeam ? 'YOU' : killerTeam.toUpperCase();
       window.Squads.pushKill(victimTeam, label);
+    }
+    // Kill feed: every takedown (yours, allied AI, or the enemy) slides a card in.
+    if (window.KillPanel && window.KillPanel.reportKill) {
+      const byPlayer = (killerTeam === state.playerTeam);
+      const victimName = victimTeam === 'deer' ? 'STAG' : 'HUNTER';
+      let method = 'other';
+      if (byPlayer && window.Weapons && window.Weapons.state && window.Weapons.state.active) {
+        const wn = String(window.Weapons.state.active.name || '').toUpperCase();
+        if (wn.indexOf('RIFLE') >= 0) method = 'rifle';
+        else if (wn.indexOf('ROCKET') >= 0) method = 'rocket';
+        else if (wn.indexOf('GRENADE') >= 0) method = 'grenade';
+        else if (wn.indexOf('SNIPER') >= 0) method = 'sniper';
+      }
+      window.KillPanel.reportKill(victimName, {
+        byPlayer: byPlayer, playerKiller: byPlayer,
+        method: method, headshot: !!(entity && entity._killHeadshot),
+        victimTeam: victimTeam, killerTeam: killerTeam,
+      });
     }
   }
 
